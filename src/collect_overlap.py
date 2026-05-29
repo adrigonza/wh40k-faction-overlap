@@ -1,11 +1,8 @@
-"""
-Warhammer 40k Faction Overlap
+"""Warhammer 40k faction overlap analysis.
 
-Read-only prototype for estimating aggregate subreddit overlap among public
-Warhammer 40k faction communities.
-
-This script is intended for personal, non-commercial analysis. It does not post,
-comment, vote, message users, or moderate communities.
+Read-only prototype for estimating aggregate subreddit overlap among public Warhammer 40k
+faction communities. This script is intended for personal, non-commercial analysis. It does not
+post, comment, vote, message users, or moderate communities.
 """
 
 from __future__ import annotations
@@ -24,7 +21,6 @@ import praw
 from dotenv import load_dotenv
 from sklearn.metrics.pairwise import cosine_similarity
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = PROJECT_ROOT / "outputs"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -32,6 +28,8 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 @dataclass(frozen=True)
 class Settings:
+    """Runtime settings controlling Reddit sampling, graph filtering, and output size."""
+
     post_limit_per_faction: int = 120
     max_users_per_faction: int = 80
     comment_limit_per_user: int = 150
@@ -45,7 +43,6 @@ class Settings:
 
 
 SETTINGS = Settings()
-
 
 FACTION_SUBS = {
     "Space Marines": "spacemarines",
@@ -72,7 +69,6 @@ FACTION_SUBS = {
     "Drukhari": "Drukhari",
     "Leagues of Votann": "LeaguesofVotann",
 }
-
 
 EXCLUDE_SUBS = {
     "AskReddit",
@@ -103,7 +99,6 @@ def get_reddit_client() -> praw.Reddit:
         "REDDIT_CLIENT_SECRET",
         "REDDIT_USER_AGENT",
     ]
-
     missing = [name for name in required if not os.environ.get(name)]
     if missing:
         raise RuntimeError(
@@ -116,6 +111,7 @@ def get_reddit_client() -> praw.Reddit:
         client_id=os.environ["REDDIT_CLIENT_ID"],
         client_secret=os.environ["REDDIT_CLIENT_SECRET"],
         user_agent=os.environ["REDDIT_USER_AGENT"],
+        ratelimit_seconds=300,
     )
 
 
@@ -125,7 +121,7 @@ def get_recent_authors_from_subreddit(
     post_limit: int,
     max_users: int,
 ) -> set[str]:
-    """Collect a limited sample of public authors from a subreddit."""
+    """Collect a limited sample of public post authors from a subreddit."""
     subreddit = reddit.subreddit(subreddit_name)
     authors: set[str] = set()
 
@@ -167,7 +163,7 @@ def get_user_public_subreddits(
             if subreddit not in EXCLUDE_SUBS:
                 seen_subreddits.add(subreddit)
 
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # pylint: disable=broad-exception-caught
         print(f"  Skipping u/{username}: {exc}")
 
     return seen_subreddits
@@ -185,10 +181,9 @@ def collect_overlap_data(reddit: praw.Reddit) -> dict[str, dict[str, set[str]]]:
             post_limit=SETTINGS.post_limit_per_faction,
             max_users=SETTINGS.max_users_per_faction,
         )
-
         print(f"  Found {len(users)} users. Reading public user activity...")
-        faction_to_user_subs[faction] = {}
 
+        faction_to_user_subs[faction] = {}
         for index, username in enumerate(sorted(users), start=1):
             faction_to_user_subs[faction][username] = get_user_public_subreddits(
                 reddit=reddit,
@@ -277,7 +272,6 @@ def plot_faction_to_subreddit_network(df: pd.DataFrame) -> None:
         return
 
     graph = nx.Graph()
-
     for _, row in filtered.iterrows():
         graph.add_node(row["faction"], node_type="faction")
         graph.add_node(row["other_subreddit"], node_type="subreddit")
@@ -288,18 +282,31 @@ def plot_faction_to_subreddit_network(df: pd.DataFrame) -> None:
         )
 
     pos = nx.spring_layout(graph, seed=42, weight="weight", k=0.45)
-    faction_nodes = [n for n, d in graph.nodes(data=True) if d["node_type"] == "faction"]
-    subreddit_nodes = [n for n, d in graph.nodes(data=True) if d["node_type"] == "subreddit"]
+    faction_nodes = [node for node, data in graph.nodes(data=True) if data["node_type"] == "faction"]
+    subreddit_nodes = [node for node, data in graph.nodes(data=True) if data["node_type"] == "subreddit"]
     edge_widths = [max(0.5, min(5, graph[u][v]["weight"])) for u, v in graph.edges()]
 
     plt.figure(figsize=(18, 14))
-    nx.draw_networkx_nodes(graph, pos, nodelist=faction_nodes, node_size=900, node_shape="s")
-    nx.draw_networkx_nodes(graph, pos, nodelist=subreddit_nodes, node_size=350, node_shape="o")
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=faction_nodes,
+        node_size=900,
+        node_shape="s",
+    )
+    nx.draw_networkx_nodes(
+        graph,
+        pos,
+        nodelist=subreddit_nodes,
+        node_size=350,
+        node_shape="o",
+    )
     nx.draw_networkx_edges(graph, pos, width=edge_widths, alpha=0.35)
     nx.draw_networkx_labels(graph, pos, font_size=8)
     plt.title("Warhammer 40k factions linked to unusually common subreddits")
     plt.axis("off")
     plt.tight_layout()
+
     output_path = OUTPUT_DIR / "faction_to_subreddit_network.png"
     plt.savefig(output_path, dpi=180)
     plt.close()
@@ -335,8 +342,8 @@ def plot_faction_similarity_network(df: pd.DataFrame) -> None:
     factions = list(sim_df.index)
     graph.add_nodes_from(factions)
 
-    for i, faction_a in enumerate(factions):
-        for faction_b in factions[i + 1 :]:
+    for index, faction_a in enumerate(factions):
+        for faction_b in factions[index + 1 :]:
             similarity = float(sim_df.loc[faction_a, faction_b])
             if similarity >= SETTINGS.min_similarity_for_edge:
                 graph.add_edge(faction_a, faction_b, weight=similarity)
@@ -347,7 +354,7 @@ def plot_faction_similarity_network(df: pd.DataFrame) -> None:
 
     pos = nx.spring_layout(graph, seed=42, weight="weight")
     edge_widths = [1 + 6 * graph[u][v]["weight"] for u, v in graph.edges()]
-    edge_labels = {(u, v): f"{d['weight']:.2f}" for u, v, d in graph.edges(data=True)}
+    edge_labels = {(u, v): f"{data['weight']:.2f}" for u, v, data in graph.edges(data=True)}
 
     plt.figure(figsize=(14, 12))
     nx.draw_networkx_nodes(graph, pos, node_size=1000)
@@ -357,6 +364,7 @@ def plot_faction_similarity_network(df: pd.DataFrame) -> None:
     plt.title("Similarity between Warhammer 40k factions based on subreddit overlap")
     plt.axis("off")
     plt.tight_layout()
+
     output_path = OUTPUT_DIR / "faction_similarity_network.png"
     plt.savefig(output_path, dpi=180)
     plt.close()
@@ -364,6 +372,7 @@ def plot_faction_similarity_network(df: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    """Run the complete collection, export, and plotting pipeline."""
     reddit = get_reddit_client()
     faction_to_user_subs = collect_overlap_data(reddit)
     df = build_probability_table(faction_to_user_subs)
