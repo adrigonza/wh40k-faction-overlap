@@ -12,6 +12,7 @@ env/
 # Local secrets
 .env
 .env.*
+!.env.example
 praw.ini
 
 # Local data/output files
