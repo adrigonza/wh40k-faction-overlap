@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warhammer 40k Faction Overlap</title>
+  <style>
+    :root {
+      --bg: #0e1018;
+      --card: #171b2a;
+      --card-soft: #20263a;
+      --text: #f4f0e8;
+      --muted: #b8b3a8;
+      --accent: #d6a84f;
+      --accent-2: #8fb3ff;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(214, 168, 79, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(143, 179, 255, 0.14), transparent 32%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 48px 24px 72px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 32px;
+      align-items: center;
+      min-height: 72vh;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: clamp(42px, 7vw, 78px);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+      margin: 0 0 24px;
+    }
+
+    .lead {
+      font-size: clamp(18px, 2.3vw, 24px);
+      color: var(--muted);
+      max-width: 780px;
+      margin-bottom: 32px;
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 14px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card-soft);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), #f1d27a);
+      color: #16120a;
+      border: none;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      background: rgba(23, 27, 42, 0.82);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(12px);
+    }
+
+    .mini-graph {
+      height: 360px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      background:
+        linear-gradient(120deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)),
+        #111522;
+      border: 1px solid var(--border);
+    }
+
+    .node {
+      position: absolute;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #16120a;
+      background: var(--accent);
+      box-shadow: 0 12px 32px rgba(214, 168, 79, 0.22);
+    }
+
+    .node.small {
+      width: 54px;
+      height: 54px;
+      font-size: 10px;
+      color: var(--text);
+      background: #2e3755;
+      box-shadow: none;
+    }
+
+    .edge {
+      position: absolute;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.22);
+      transform-origin: left center;
+    }
+
+    .edge.one { width: 180px; top: 120px; left: 100px; transform: rotate(18deg); }
+    .edge.two { width: 210px; top: 210px; left: 145px; transform: rotate(-25deg); }
+    .edge.three { width: 150px; top: 155px; left: 220px; transform: rotate(48deg); }
+    .edge.four { width: 170px; top: 270px; left: 260px; transform: rotate(-18deg); }
+
+    .n1 { left: 44px; top: 82px; }
+    .n2 { right: 58px; top: 62px; }
+    .n3 { left: 142px; bottom: 44px; }
+    .n4 { right: 96px; bottom: 70px; }
+    .n5 { left: 245px; top: 140px; }
+
+    .section { margin-top: 56px; }
+
+    .section h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: -0.04em;
+      margin: 0 0 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      background: rgba(23, 27, 42, 0.72);
+      border-radius: 20px;
+      padding: 22px;
+    }
+
+    .card h3 { margin: 0 0 10px; font-size: 18px; }
+    .card p { color: var(--muted); margin: 0; }
+
+    .pill-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+
+    .pill {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      padding: 8px 12px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .notice {
+      border-left: 4px solid var(--accent);
+      background: rgba(214, 168, 79, 0.08);
+      padding: 18px 20px;
+      border-radius: 16px;
+      color: var(--muted);
+    }
+
+    footer {
+      margin-top: 64px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .grid { grid-template-columns: 1fr; }
+      .mini-graph { height: 300px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="badge">⚔️ Non-commercial Reddit community analysis</div>
+        <h1>Warhammer 40k Faction Overlap</h1>
+        <p class="lead">
+          A Python project for mapping how Warhammer 40,000 faction communities overlap with other public Reddit communities.
+        </p>
+        <div class="actions">
+          <a class="btn primary" href="https://github.com/adrigonza/wh40k-faction-overlap">View on GitHub</a>
+          <a class="btn" href="#method">Methodology</a>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="mini-graph" aria-label="Decorative network graph">
+          <div class="edge one"></div>
+          <div class="edge two"></div>
+          <div class="edge three"></div>
+          <div class="edge four"></div>
+          <div class="node n1">Orks</div>
+          <div class="node small n2">Painting</div>
+          <div class="node small n3">Lore</div>
+          <div class="node n4">Tyranids</div>
+          <div class="node small n5">Tabletop</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="method">
+      <h2>What this project measures</h2>
+      <p class="lead">
+        The project estimates subreddit overlap using public activity and turns it into aggregate network graphs.
+      </p>
+
+      <div class="grid">
+        <article class="card">
+          <h3>Overlap probability</h3>
+          <p>Estimate how often users sampled from a faction community also appear in another public subreddit.</p>
+        </article>
+
+        <article class="card">
+          <h3>Affinity / lift</h3>
+          <p>Normalize against baseline popularity so huge subreddits do not dominate the results.</p>
+        </article>
+
+        <article class="card">
+          <h3>Faction similarity</h3>
+          <p>Compare faction communities based on their full public subreddit participation profiles.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Privacy-first design</h2>
+      <div class="notice">
+        This project is designed to produce community-level aggregate statistics only. It does not post, comment, vote, message users, moderate communities, or publish individual user histories.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Planned stack</h2>
+      <div class="pill-list">
+        <span class="pill">Python</span>
+        <span class="pill">PRAW</span>
+        <span class="pill">pandas</span>
+        <span class="pill">NetworkX</span>
+        <span class="pill">matplotlib</span>
+        <span class="pill">scikit-learn</span>
+        <span class="pill">CSV exports</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Status</h2>
+      <p class="lead">
+        Early planning and prototype stage. The first milestone is a read-only local script that exports anonymized aggregate CSV files and simple network graphs.
+      </p>
+    </section>
+
+    <footer>
+      Warhammer 40k Faction Overlap is a personal, non-commercial data analysis project. Warhammer 40,000 is a trademark of Games Workshop. This project is unofficial and not affiliated with Games Workshop or Reddit.
+    </footer>
+  </main>
+</body>
+</html>

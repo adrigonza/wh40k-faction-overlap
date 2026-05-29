@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+wh40k-env/
+.venv/
+venv/
+env/
+
+# Local secrets
+.env
+.env.*
+praw.ini
+
+# Local data/output files
+data/
+outputs/
+*.csv
+*.sqlite
+*.db
+
+# OS/editor files
+.DS_Store
+.vscode/
+.idea/
